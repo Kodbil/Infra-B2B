@@ -7,26 +7,16 @@ class InfraCronModuleFrontController extends ModuleFrontController
 {
 	public function init()
 	{
-            //$this->updateProduct();
-            $array = array();
-            $query = "SELECT * FROM stock_update";
-                $result = Db::getInstance()->executeS($query);
-            for($i = 1;$i<11000; $i++)
-            { 
-                $new = new FeatureValue($i);
-                array_push($array, $new);
-              
+
+            $data = $this->orderUpdate();
+            if(!empty($data))
+            {
+                $url = 'upload/'.Tools::passwdGen().'.csv';
+                $this->write_file( $url, array_to_csv($data),'a+');
+                print_r($this->addOrderRequest('http://'.Tools::getHttpHost().'/'.basename(__PS_BASE_URI__).'/'.$url));
+                
             }
-             echo memory_get_usage();
-//            $data = $this->orderUpdate();
-//            if(!empty($data))
-//            {
-//                $url = 'upload/'.Tools::passwdGen().'.csv';
-//                $this->write_file( $url, array_to_csv($data),'a+');
-//                print_r($this->addOrderRequest('http://'.Tools::getHttpHost().'/'.basename(__PS_BASE_URI__).'/'.$url));
-//                
-//            }
-//            $this->cron();
+            $this->cron();
 
                         
 	}
