@@ -19,10 +19,7 @@ class InfraCronModuleFrontController extends ModuleFrontController
             }
 
             $this->cron();
-
-            
-
-                        
+          
 	}
 
 	public function initContent()
