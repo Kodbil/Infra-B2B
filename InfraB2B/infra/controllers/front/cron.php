@@ -7,7 +7,8 @@ class InfraCronModuleFrontController extends ModuleFrontController
 {
 	public function init()
 	{
-
+                
+            set_time_limit (3600);    
             $data = $this->orderUpdate();
             if(!empty($data))
             {
@@ -16,7 +17,10 @@ class InfraCronModuleFrontController extends ModuleFrontController
                 print_r($this->addOrderRequest('http://'.Tools::getHttpHost().'/'.basename(__PS_BASE_URI__).'/'.$url));
                 
             }
+
             $this->cron();
+
+            
 
                         
 	}
@@ -337,7 +341,7 @@ class InfraCronModuleFrontController extends ModuleFrontController
                     else continue; 
                 } 
 
-                if(in_array($value, $item, true)) return true; 
+                if(in_array($value, $item)) return true; 
                 else if($this->deep_in_array($value, $item)) return true; 
             } 
             return false; 
@@ -346,7 +350,7 @@ class InfraCronModuleFrontController extends ModuleFrontController
         private function addFeatures()
         {
             
-            $allFeatures = Feature::getFeatures(1);
+            $allFeatures = Feature::getFeatures(LanguageCore::getIdByIso('tr'));
             if(!$this->deep_in_array('StokKodu', $allFeatures))
             {
                 $features = new Feature();
@@ -359,10 +363,10 @@ class InfraCronModuleFrontController extends ModuleFrontController
         
         private function updateProduct()
         {
+            $i = 0;
             $language = Language::getLanguages(false);
             $fetureId = $this->findFeatureId('StokKodu');
             $allFeatureValue = $this->getFeatureValues($fetureId);
-            echo memory_get_usage();
             
                 $query = "SELECT * FROM stock_update";
                 $result = Db::getInstance()->executeS($query);
@@ -378,6 +382,7 @@ class InfraCronModuleFrontController extends ModuleFrontController
 
                     $fetureValue->id_feature = $fetureId;
                     $fetureValue->value = $value['sku'];
+                    
                     $fetureValue->save();
                     $id_feature_value = $fetureValue->id;
                     $newProduct = new Product();
@@ -412,7 +417,7 @@ class InfraCronModuleFrontController extends ModuleFrontController
         
         private function findFeatureId($name = 'StokKodu') {
             
-            foreach(Feature::getFeatures(1) as $value)
+            foreach(Feature::getFeatures(LanguageCore::getIdByIso('tr')) as $value)
             {
                 if($name == $value['name'])
                     return $value['id_feature'];
@@ -506,15 +511,12 @@ class InfraCronModuleFrontController extends ModuleFrontController
                         $price->from = date('Y-m-d h:i:s');
                         $price->to = '2100-01-01 00:00:00';
                         $price->id_currency = 0;
-                        $price->price = $value['price'];
+                        $price->price = $value['currency']== 0 ? $value['price'] : Tools::convertPrice($value['price'], Currency::getIdByIsoCodeNum($this->getCurrencyIsoCodeNum($value['currency'])),false);
                         $price->save();
                     }
-                    
-
+ 
                 }
-                
-               
-                
+         
             }
             
         }
@@ -617,8 +619,8 @@ class InfraCronModuleFrontController extends ModuleFrontController
         private function getStockCode($id)
         {
             
-            $query = "SELECT value AS sku FROM feature_value_lang vl
-                      JOIN feature_product fp ON vl.id_feature_value = fp.id_feature_value
+            $query = "SELECT value AS sku FROM "._DB_PREFIX_."feature_value_lang vl
+                      JOIN "._DB_PREFIX_."feature_product fp ON vl.id_feature_value = fp.id_feature_value
                       where fp.id_product = $id LIMIT 0,1";
             $result = Db::getInstance()->executeS($query);
             
